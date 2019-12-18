@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.hobot.flying.xbusiness";
+option java_outer_classname = "XBusinessProto";
+
+import "xbusiness_type.proto";
+
+package xbusiness_api;
+
+/*
+APIs that cloud provied for car to use xbusiness service
+*/
+service xbusinessServer {
+    /*
+    * @brief Register
+    * @param[in] RegRequest request
+    * @author mengmeng.zhi
+    * @date 21/12/2018
+    */
+    rpc Register (xbusiness_type.RegRequest) returns (xbusiness_type.RegResponse) {}
+
+    /*
+    * @brief Update a Doc
+    * @param[in] UpdateDocRequest request
+    * @author mengmeng.zhi
+    * @date 21/12/2018
+    */
+    rpc UpdateDoc (xbusiness_type.UpdateDocRequest) returns (xbusiness_type.UpdateDocResponse) {}
+
+    /*
+    * @brief Apply a 1:N person search
+    * @param[in] UpdateDocRequest request
+    * @author mengmeng.zhi
+    * @date 21/12/2018
+    */
+    rpc Search(xbusiness_type.SearchRequest) returns (xbusiness_type.SearchResponse) {}
+
+    /*
+    * @brief Predict gender from a given picture
+    * @param[in] PreGenderRequest request
+    * @author mengmeng.zhi
+    * @date 21/12/2018
+    */
+    rpc PredictGender(xbusiness_type.PreGenderRequest) returns (xbusiness_type.PreGenderResonse) {}
+
+    /*
+    * @brief Predict age from a given picture
+    * @param[in] PreGenderRequest request
+    * @author mengmeng.zhi
+    * @date 21/12/2018
+    */
+    rpc PredictAge(xbusiness_type.PreAgeRequest) returns (xbusiness_type.PreAgeResponse) {}
+}
+
+
+
+

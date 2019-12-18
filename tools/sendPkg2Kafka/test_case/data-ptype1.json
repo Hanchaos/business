@@ -1,0 +1,58 @@
+{
+   "data" : "{\"id\":\"\",\"ver\":\"SMART-2.0.003\",\"tmst\":1550487289,\"src\":\"\",\"pformat\":0,\"ptype\":1,\"did\":\"02d001230a31f77c9b36\",\"dest\":\"\",\"bid\":\"{\\\"type\\\":\\\"start\\\",\\\"action\\\":[6],\\\"device_id\\\":\\\"02d001230a31f77c9b36\\\",\\\"tasks\\\":[{\\\"task_id\\\":\\\"b3e80a75-f751-4b05-bff7-e4fdcb5654bf\\\",\\\"uid\\\":\\\"business_test2\\\",\\\"tenant_id\\\":\\\"ipc\\\",\\\"device_id\\\":\\\"02d001230a31f77c9b36\\\",\\\"extra\\\":\\\"\\\",\\\"busi_type\\\":6,\\\"threshold\\\":0,\\\"feature_set\\\":null,\\\"trace_data\\\":{\\\"match_threshold\\\":0,\\\"reg_threshold\\\":0,\\\"name\\\":\\\"\\\",\\\"group_id\\\":\\\"\\\",\\\"cron\\\":\\\"\\\"},\\\"min_lost_count\\\":0,\\\"line_thickness\\\":0,\\\"min_track_length\\\":0,\\\"line_id\\\":null}],\\\"lines\\\":null,\\\"start_time\\\":0,\\\"end_time\\\":0,\\\"create_time\\\":0,\\\"update_time\\\":0,\\\"status\\\":0}\",\"uid\":\"business_test2\",\"payload\":\"{\\\"capture\\\":{\\\"bkgd\\\":{\\\"tkid\\\":[],\\\"tmst\\\":0,\\\"systm\\\":0,\\\"uri\\\":\\\"oss-cn-beijing.aliyuncs.com/zsy-feitian-test1/02d001230a31f77c9b36_20190218185449_25416.jpg\\\"}}}\"}",
+   "msg_id" : "003e6d338c0c2f43",
+   "tasks" : [
+      {
+         "busi_type" : 2,
+         "device_id" : "02d001230a31f77c9b36",
+         "extra" : "",
+         "feature_set" : [
+            "business_test2-vip",
+            "business_test2-whitelist",
+            "business_test2-blacklist",
+            "business_test2_119_bs_autoreg"
+         ],
+         "line_id" : null,
+         "line_thickness" : 10,
+         "min_lost_count" : 50,
+         "min_track_length" : 5,
+         "task_id" : "test_trace_taskid",
+         "tenant_id" : "ipc",
+         "threshold" : 71,
+         "trace_data" : {
+            "cron" : "0 0 1 * * ? *",
+            "group_id" : "business",
+            "match_threshold" : 76,
+            "name" : "business_test2_119_bs_autoreg",
+            "reg_threshold" : 76
+         },
+         "uid" : "retail_lhcjtj,104"
+      },
+      {
+         "busi_type" : 7,
+         "device_id" : "02d001230a31f77c9b36",
+         "extra" : "",
+         "feature_set" : [
+            "business_test2-vip",
+            "business_test2-whitelist",
+            "business_test2-blacklist",
+            "business_test2_119_bs_autoreg"
+         ],
+         "line_id" : null,
+         "line_thickness" : 10,
+         "min_lost_count" : 50,
+         "min_track_length" : 5,
+         "task_id" : "aec0b91f-da42-4bc3-9157-7990d943d2cc",
+         "tenant_id" : "ipc",
+         "threshold" : 0,
+         "trace_data" : {
+            "cron" : "",
+            "group_id" : "",
+            "match_threshold" : 70,
+            "name" : "",
+            "reg_threshold" : 0
+         },
+         "uid" : "business_test2,119"
+      }
+   ]
+}

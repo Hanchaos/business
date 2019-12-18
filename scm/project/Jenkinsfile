@@ -1,0 +1,265 @@
+def exec_create_tag() {
+    dir("${env.GALLERY_YAML_PATH}") {
+        // version
+        //sh 'echo $BRANCH_NAME-$BUILD_NUMBER-${GIT_COMMIT:0:7}' 
+        sh 'echo ${BUILD_TAG:8:70}-${GIT_COMMIT:0:7} | sed s/%2F//g'
+        sh 'sed -i "s/^version:.*$/version: "$(echo ${BUILD_TAG:8:70}-${GIT_COMMIT:0:7} | sed s/%2F//g)"/g" $GALLERY_YAML_FILE'
+        if (env.DIFF_ID && env.PHID) {
+            sh 'sed -i "s/^version:.*$/version: "$(echo ${BUILD_TAG:8:70}-PH-D$REVISION_ID | sed s/%2F//g)"/g" $GALLERY_YAML_FILE'
+        }
+        if (env.TAG_NAME) {
+            sh 'sed -i "s/^version:.*$/version: "$(echo $TAG_NAME)"/g" $GALLERY_YAML_FILE'
+            tag_stage = sh (script: "git --no-pager show -s --format='%N' $TAG_NAME",returnStdout: true).trim().replaceAll("[\\n\\r]", " ")
+            echo tag_stage
+            sh 'sed -i "s/^status:.*$/status: stage/g" $GALLERY_YAML_FILE'
+            if (tag_stage ==~ /.*\[release\].*/) {
+                echo "Bingo release"
+                sh 'sed -i "s/^status:.*$/status: release/g" $GALLERY_YAML_FILE'
+            }
+        }
+        // sha-1
+        sh 'echo $GIT_COMMIT' 
+        sh 'sed -i "s/^scm_commit_id:.*$/scm_commit_id: "$(echo $GIT_COMMIT)"/g" $GALLERY_YAML_FILE'
+        // build id
+        sh 'echo $BUILD_NUMBER' 
+        sh 'sed -i "s/^scm_build_id:.*$/scm_build_id: "$(echo \\"$BUILD_NUMBER)"\\"/g" $GALLERY_YAML_FILE'
+        //scm_committer
+        sh 'git --no-pager show -s --format=%cn $GIT_COMMIT' 
+        sh 'sed -i "s/^scm_committer:.*$/scm_committer: `git --no-pager show -s --format=%cn $GIT_COMMIT`/g" $GALLERY_YAML_FILE'
+        //scm_commit_time
+        sh 'git --no-pager show -s --format=%cI $GIT_COMMIT' 
+        sh 'sed -i "s/^scm_commit_time:.*$/scm_commit_time: \\"`git --no-pager show -s --format=%cI $GIT_COMMIT`\\"/g" $GALLERY_YAML_FILE'
+        //scm_desc
+        sh 'git --no-pager show -s --format=%s $GIT_COMMIT' 
+        sh 'sed -i "s/^scm_desc:.*$/scm_desc: \\"`git --no-pager show -s --format=%s $GIT_COMMIT | sed s/[/]/\\ /g | sed s/[\\\\"]/\\ /g`\\"/g" $GALLERY_YAML_FILE'
+        // view
+        sh 'cat $GALLERY_YAML_FILE'
+    }
+}
+
+def exec_upload() {
+    exec_create_tag()
+    sh "cp $GALLERY_YAML_PATH/$GALLERY_YAML_FILE output/."
+    dir('output') {
+        sh 'zip -r output.zip *'
+        sh 'mv output.zip ../.'
+    }
+    dir("scm") {
+        sh 'python3 gallery_upload.py -c ../$GALLERY_YAML_PATH/$GALLERY_YAML_FILE'
+    }
+}
+
+
+def exec_get_ph() {
+    if (env.DIFF_ID && env.PHID) {
+        //sh 'echo test;lsssssssss'
+        sh 'echo build from PH'
+        sh 'echo ph merge'
+        sh 'git reset --hard origin/$BRANCH_NAME'
+        sh 'git clean -fd -f'
+        sh 'echo no submodule, skip submodule update'
+        //sh 'git submodule update --init --recursive'
+        sh '''
+            git config --global user.name jingyi.wang
+            git config --global user.email jingyi.wang@horizon.ai
+            arc patch --diff $DIFF_ID --nobranch --force --nocommit --conduit-uri=https://cr.hobot.cc/ --conduit-token=api-ojyrmpxgp4zwelvzgikelwywjz7x
+        '''
+    }
+}
+
+def exec_lint() {
+    if (env.DIFF_ID && env.PHID) {
+        //sh '/bin/cp scm/cpplint.py /usr/local/bin/.'
+        sh '/bin/cp scm/arclint .arclint'
+        sh 'git --no-pager log'
+        sh 'arc lint --output json --only-changed --rev $GIT_COMMIT --outfile lint_result.json'
+        sh 'zip source_lint_result.zip lint_result.json'
+        //archiveArtifacts artifacts: 'source_lint_result.zip', fingerprint: false, onlyIfSuccessful: false
+        sh 'git --no-pager log'
+        dir('scm') {
+            sh 'cat ../lint_result.json'
+            sh 'python3 phformatter.py -c ../lint_result.json'
+            sh 'cat phabricator.json'
+            sh 'mv phabricator.json ../.'
+        }
+        sh 'zip lint_result.zip phabricator.json'
+        stash includes: 'lint_result.zip', name: 'lint_result'
+        //archiveArtifacts artifacts: 'lint_result.zip', fingerprint: false, onlyIfSuccessful: false
+        sh 'rm -rf phabricator.json lint_result.json'
+    }
+}
+
+def exec_build() {
+    dir('build') {
+        sh 'cmake ../'
+        sh 'make'
+        sh 'make copy'
+    }
+    sh 'mv conf conf.bak'
+    sh 'cp -a conf.bak conf'
+    sh 'mkdir bin'
+    sh 'cp build/bin/xbusiness bin/'
+    sh 'cp -a build/lib lib'
+    sh 'cp Depend/lib/* lib'
+    sh 'cp -a ci/xbusiness/start.sh ./start.sh'
+    dir('output') {
+        sh 'cp -r ../bin .'
+        sh 'cp -r ../conf .'
+        sh 'cp -r ../lib .'
+        sh 'cp ../start.sh .'
+        sh 'find'
+    }
+}
+
+pipeline {
+    agent {
+        kubernetes {
+            label "${UUID.randomUUID().toString()}"
+            yamlFile 'scm/cicd_common_tool.yaml'
+        }
+    }
+    parameters {
+        string defaultValue: '', description: 'Enter PH DIFF_ID', name: 'DIFF_ID', trim: true
+        string defaultValue: '', description: 'Enter PH PHID', name: 'PHID', trim: true
+        string defaultValue: '', description: 'Enter PH REVISION ID', name: 'REVISION_ID', trim: true
+    }
+    stages{
+        stage('prepare') {
+            agent {
+                kubernetes {
+                    label "${UUID.randomUUID().toString()}"
+                    yamlFile 'scm/cicd_common_tool.yaml' 
+                }
+            }
+            environment {
+                LANG = 'en_US.UTF-8'
+            }
+            steps {
+                container('build') {
+                    script {
+                        if (!env.DIFF_ID && !env.PHID) {
+                            updateGitlabCommitStatus name: "${env.BUILD_TAG}", state: 'running'
+                        }
+                    }    
+                    sh 'env'
+                    exec_get_ph()
+                    exec_lint()
+                    stash includes: '**', name: 'source_code'
+                }
+            }
+        }
+        stage('building') {
+            when {
+                environment name: 'DIFF_ID', value: ''
+                beforeAgent true
+            }
+            agent {
+                kubernetes {
+                    label "${UUID.randomUUID().toString()}"
+                    yamlFile 'scm/project/build.yaml' 
+                }
+            }
+            environment {
+                GRADLE_USER_HOME = "${env.WORKSPACE}/.gradle"
+            }
+            options { 
+                skipDefaultCheckout() 
+            }
+            steps {
+                container('build') {
+                    unstash 'source_code'
+                    exec_build()
+                    //stash includes: '.gradle/**', name: 'debug-gradle'
+                    stash includes: 'output/**', name: 'output'
+                    //archiveArtifacts artifacts: 'output_debug/**', fingerprint: true, onlyIfSuccessful: false
+                }
+            }
+        }
+        stage('publish') {
+            when {
+                expression { env.TAG_NAME != null } 
+                beforeAgent true 
+            }
+            agent {
+                kubernetes {
+                    label "${UUID.randomUUID().toString()}"
+                    yamlFile 'scm/cicd_common_tool.yaml' 
+                }
+            }
+            environment {
+                GALLERY_YAML_FILE = 'upload.yaml'
+                GALLERY_YAML_PATH = 'scm/project'
+                LANG = 'en_US.UTF-8'
+            }
+            steps {
+                container('build') {
+                    unstash 'output'
+                    exec_upload()
+                }
+            }
+        }
+    }
+    options {
+      gitLabConnection('Gitlab connector by hobot.ci')
+    }
+    post {
+        failure {
+            script {
+                if (!env.DIFF_ID && !env.PHID) {
+                    updateGitlabCommitStatus name: "${env.BUILD_TAG}", state: 'failed'
+                }
+            }
+        }
+        success {
+            script {
+                if (!env.DIFF_ID && !env.PHID) {
+                    updateGitlabCommitStatus name: "${env.BUILD_TAG}", state: 'success'
+                }
+            }
+        }
+        unstable {
+            script {
+                if (!env.DIFF_ID && !env.PHID) {
+                    updateGitlabCommitStatus name: "${env.BUILD_TAG}", state: 'success'
+                }
+            }
+        }
+        aborted {
+            script {
+                if (!env.DIFF_ID && !env.PHID) {
+                    updateGitlabCommitStatus name: "${env.BUILD_TAG}", state: 'canceled'
+                }
+            }
+        }
+        always {
+            script {
+                if (env.DIFF_ID && env.PHID) {
+                    try {
+                        unstash 'lint_result'
+                        sh 'unzip lint_result.zip'
+                        step([$class: 'PhabricatorNotifier', commentOnSuccess: true, commentWithConsoleLinkOnFailure: true, processLint: true, lintFile: 'phabricator.json', lintFileSize: '999999999'])
+                    }
+                    catch (Exception e) {
+                        step([$class: 'PhabricatorNotifier', commentOnSuccess: true, commentWithConsoleLinkOnFailure: true])
+                    }
+                }
+            }
+            emailext (
+                attachLog: true,
+                subject: "${env.JOB_NAME} - Build # ${env.BUILD_NUMBER} - ${currentBuild.currentResult} !",
+                body: """
+                Check the info below to get more information
+                
+                Job Link: ${env.BUILD_URL}
+                Branch/Tag Name: ${env.BRANCH_NAME}
+                Job Name: ${env.JOB_NAME}
+                Build Number: ${env.BUILD_NUMBER}
+                Result: ${currentBuild.currentResult}
+                """,
+                to: "jingyi.wang@horizon.ai,liangliang.zhao@horizon.ai",
+                from: "hobot.ci@horizon.ai"
+            )
+        }
+    }
+}
+

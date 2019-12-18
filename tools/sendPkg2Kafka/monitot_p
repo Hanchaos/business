@@ -1,0 +1,8 @@
+#!/bin/bash
+
+while true
+do
+  base_info=`top -bp 21737 -n 1 | grep 'zll' | grep 'xbusiness'`
+  echo $base_info >> bbbb
+  sleep 10
+done

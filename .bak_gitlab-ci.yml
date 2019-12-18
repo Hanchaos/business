@@ -1,0 +1,78 @@
+image: docker.hobot.cc/ci/gradle-builder:0.4
+variables:
+  GALLERY_GROUP: "aoe.flying.service.xservice"
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+
+stages:
+- build
+- release
+
+build from gitlab webui:
+  stage: build
+  tags:
+  - kubernetes
+  script:
+  - mkdir build
+  - cd build
+  - cmake ../
+  - make
+  - make copy
+  artifacts:
+    paths:
+    - build/
+  cache:
+    key: gradle
+    paths:
+      - $GRADLE_USER_HOME
+    policy: pull
+  only:
+  - web
+  
+build xservice:
+  stage: build
+  tags:
+  - kubernetes
+  script:
+  - mkdir build
+  - cd build
+  - cmake ../
+  - make
+  - make copy
+  artifacts:
+    paths:
+    - build/
+    expire_in: 1h
+  cache:
+    key: gradle
+    paths:
+      - $GRADLE_USER_HOME
+    policy: pull
+  only:
+  - tags
+
+release_xbusiness:
+  stage: release
+  tags:
+  - kubernetes
+  script:
+  - mv conf conf.bak
+  - cp -a conf.bak conf
+  - mkdir bin
+  - cp build/bin/xbusiness bin/
+  - cp -a build/lib lib
+  - cp Depend/lib/* lib
+  - cp -a ci/xbusiness/start.sh ./start.sh
+  dependencies:
+  - build xservice
+  artifacts:
+    paths:
+    - bin/
+    - conf/
+    - lib/
+    - start.sh
+  variables:
+    GALLERY_ENABLE: "true"
+    GALLERY_PROJECT: "xbusiness_r"
+  only:
+  - tags
+

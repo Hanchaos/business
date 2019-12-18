@@ -1,0 +1,275 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.hobot.flying.xbusiness.types";
+option java_outer_classname = "XBusinessTypesProto";
+
+package xbusiness_type;
+
+enum Gender 
+{
+    FEMALE = 0;
+    MALE = 1;
+}
+
+/*
+* @brief Operations of UpdateDoc
+*/
+enum UpdateOper 
+{
+    ADD = 0;
+    DELETE = 1;
+    MODIFY = 2;
+}
+
+/*Used for key-value type*/
+message Pair {
+    string key = 1;
+    string value = 2;
+}
+
+
+message Image
+{
+    /*content of a picture*/
+    bytes image_buffer = 1;
+
+    /*length of the picture*/
+    int64 buffer_size = 2;
+}
+
+message RegRequest
+{
+    /*Unique ID of a session*/
+    int64 msg_id = 1;
+
+    /*Unique ID of a person*/
+    string person_id = 2;
+
+    /*
+    * Image list that used for register
+    * it could be one or more that one picture
+    */
+    repeated string image_urls = 3;
+
+    /*Reserved for extra info, it would be json format*/
+    string extra_info = 4;
+}
+
+
+message RegResponse
+{
+    /*Unique ID of a session, same with the msg_id in request*/
+    int64 msg_id = 1;
+
+    /*
+    * TODO: give the detail description of the rsp_code
+    */
+    int32 rsp_code = 2;
+
+    /*Description of the response*/
+    string rsp_desc = 3;
+}
+
+
+message UpdateDocRequest
+{
+    /*Unique ID of a session*/
+    int64 msg_id = 1;
+
+    /*Unique ID of a person*/
+    string person_id = 2;
+    
+    /* Update person name 
+    * key int32 should be UpdateOper
+    */
+    map<int32, string > update_name = 3;
+    
+    /* Update person gender 
+    * key int32 should be UpdateOper
+    */
+    map<int32, Gender > update_gender = 4;
+    
+    /* Update person age 
+    * key int32 should be UpdateOper
+    */
+    map<int32, int32 > update_age = 5;
+    
+    /* Update the region that person belongs
+    * key int32 should be UpdateOper
+    */
+    map<int32, string > update_region = 6;
+    
+    /* Update the region that person belongs
+    * key int32 should be UpdateOper
+    */
+    map<int32, string > update_carID = 7;
+    
+    /* Update the vehicle type
+    * key int32 should be UpdateOper
+    */
+    map<int32, string > update_carType = 8;
+    
+    /* Update the dirving license number
+    * key int32 should be UpdateOper
+    */
+    map<int32, string > update_licNumber = 9;
+    
+    /* Update person telephone number
+    * key int32 should be UpdateOper
+    */
+    map<int32, string > update_telNumber = 10;
+    
+    /* Update customer type
+    * key int32 should be UpdateOper
+    */
+    map<int32, string > update_customerType = 11;
+    
+    /*
+    * key of the map means the operator type, it should be UpdateOper
+    * value of the map would be josn format,
+    * which cotains the attribute that need to be update.
+    * eg: {"key": "value"}
+    */
+    map<int32, Pair> update_others = 12;
+
+    /*Reserved for extra info, it would be json format*/
+    string extra_info = 13;
+}
+
+message UpdateDocResponse
+{
+    /*Unique ID of a session, same with the msg_id in request*/
+    int64 msg_id = 1;
+
+    /*
+    * TODO: give the detail description of the rsp_code
+    */
+    int32 rsp_code = 2;
+
+    /*Description of the response*/
+    string rsp_desc = 3;
+}
+
+
+message SearchRequest
+{
+    /*Unique ID of a session*/
+    int64 msg_id = 1;
+
+    /*Image that used for search*/
+    string image_url = 2;
+
+    /*Reserved for extra info, it would be json format*/
+    string extra_info = 3;
+}
+
+
+message SearchResponse
+{
+    /*Unique ID of a session, same with the msg_id in request*/
+    int64 msg_id = 1;
+
+    /*
+    * TODO: give the detail description of the rsp_code
+    */
+    int32 rsp_code = 2;
+
+    /*Description of the response*/
+    string rsp_desc = 3;
+
+    /*
+    * Whether the picture matched someone in the library
+    * If the request if successed, it was required
+    */
+    bool is_matched = 4;
+
+    /*
+    * ID of the person that was mathced.
+    * If someone was matched, it was required
+    */
+    string person_id = 5;
+
+    /*
+    * Attributes of a person
+    * It wolud be json format
+    */
+    string pay_load = 6;
+}
+
+
+message PreGenderRequest
+{
+    /*Unique ID of a session, same with the msg_id in request*/
+    int64 msg_id = 1;
+
+    /*Image that need to predict age*/
+    string image_url = 2;
+
+    /*Reserved for extra info, it would be json format*/
+    string extra_info = 3;
+}
+
+message PreGenderResonse
+{
+    /*Unique ID of a session, same with the msg_id in request*/
+    int64 msg_id = 1;
+
+    /*
+    * TODO: give the detail description of the rsp_code
+    */
+    int32 rsp_code = 2;
+
+    /*Description of the response*/
+    string rsp_desc = 3;
+
+    /*
+    * Gender that predicted
+    * If the predict was successed, it was required
+    * 0: female
+    * 1: male
+    */
+    Gender gender = 4;
+}
+
+
+message PreAgeRequest
+{
+    /*Unique ID of a session, same with the msg_id in request*/
+    int64 msg_id = 1;
+
+    /*Image that need to predict age*/
+    string image_url = 2;
+
+    /*Reserved for extra info, it would be json format*/
+    string extra_info = 3;
+}
+
+
+message PreAgeResponse
+{
+    /*Unique ID of a session, same with the msg_id in request*/
+    int64 msg_id = 1;
+
+        /*
+    * TODO: give the detail description of the rsp_code
+    */
+    int32 rsp_code = 2;
+
+    /*Description of the response*/
+    string rsp_desc = 3;
+
+    /*
+    * Gender that predicted
+    * If the predict was successed, it was required
+    * 0: 0-6 y
+    * 1: 6-12 y
+    * 2: 12-18 y
+    * 3: 18-28 y
+    * 4: 28-35 y
+    * 5: 35-45 y
+    * 6: 45-55 y
+    * 7: 55-100 y
+    */
+    int32 age = 4;
+}
